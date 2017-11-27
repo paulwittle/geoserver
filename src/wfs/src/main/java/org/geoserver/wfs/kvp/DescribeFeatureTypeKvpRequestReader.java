@@ -19,6 +19,7 @@ import org.eclipse.emf.ecore.EFactory;
 import org.geoserver.catalog.Catalog;
 import org.geoserver.wfs.WFSInfo;
 import org.geoserver.wfs.request.DescribeFeatureTypeRequest;
+import org.geoserver.wfs.request.GetFeatureRequest;
 import org.xml.sax.helpers.NamespaceSupport;
 
 
@@ -56,11 +57,23 @@ public class DescribeFeatureTypeKvpRequestReader extends WFSKvpRequestReader {
             }
         }
 
+        // handle the name differences in property names between 1.1 and 2.0
+        // The specification here is inconsistent, the KVP param table says "TYPENAME", 
+        // but an explanation just below states KVP should be using TYPENAMES and CITE users the latter
+        // So let's support both...
+        if (req instanceof DescribeFeatureTypeRequest.WFS20 && kvp.containsKey("typenames")) {
+            List<List<QName>> typenames = (List<List<QName>>) kvp.get("typenames");
+            req.getTypeNames().clear();
+            req.getTypeNames().addAll(typenames.get(0));
+        }
+
         // did the user supply alternate namespace prefixes?
         NamespaceSupport namespaces = null;
-        if (kvp.containsKey("NAMESPACE")) {
+        if (kvp.containsKey("NAMESPACE") || kvp.containsKey("NAMESPACES")) {
             if (kvp.get("NAMESPACE") instanceof NamespaceSupport) {
                 namespaces = (NamespaceSupport) kvp.get("namespace");
+            } else if (kvp.get("NAMESPACES") instanceof NamespaceSupport) {
+                    namespaces = (NamespaceSupport) kvp.get("namespaces");
             } else {
                 LOGGER.warning("There's a namespace parameter but it seems it wasn't parsed to a "
                         + NamespaceSupport.class.getName() + ": " + kvp.get("namespace"));

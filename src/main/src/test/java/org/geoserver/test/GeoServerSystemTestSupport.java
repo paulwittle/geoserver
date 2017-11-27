@@ -12,7 +12,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -1671,6 +1674,53 @@ public class GeoServerSystemTestSupport extends GeoServerBaseTestSupport<SystemT
         assertEquals(code, response.getErrorCode());
     }
 
+    /**
+     * Gets a specific pixel color from the specified buffered image
+     * @param image
+     * @param i
+     * @param j
+     * @param color
+     *
+     */
+    protected Color getPixelColor(BufferedImage image, int i, int j) {
+        ColorModel cm = image.getColorModel();
+        Raster raster = image.getRaster();
+        Object pixel = raster.getDataElements(i, j, null);
+
+        Color actual;
+        if(cm.hasAlpha()) {
+            actual = new Color(cm.getRed(pixel), cm.getGreen(pixel), cm.getBlue(pixel), cm.getAlpha(pixel));
+        } else {
+            actual = new Color(cm.getRed(pixel), cm.getGreen(pixel), cm.getBlue(pixel), 255);
+        }
+        return actual;
+    }
+
+    /**
+     * Checks the pixel i/j has the specified color
+     * @param image
+     * @param i
+     * @param j
+     * @param color
+     */
+    protected void assertPixel(BufferedImage image, int i, int j, Color color) {
+        Color actual = getPixelColor(image, i, j);
+
+
+        assertEquals(color, actual);
+    }
+
+    /**
+     * Checks the pixel i/j is fully transparent
+     * @param image
+     * @param i
+     * @param j
+     */
+    protected void assertPixelIsTransparent(BufferedImage image, int i, int j) {
+  	    int pixel = image.getRGB(i,j);
+        assertEquals(true, (pixel>>24) == 0x00);
+    }
+
     //
     // xml validation helpers
     //
@@ -1786,17 +1836,25 @@ public class GeoServerSystemTestSupport extends GeoServerBaseTestSupport<SystemT
      * and ensuring that a particular exceptionCode is used.
      */
     protected void checkOws11Exception(Document dom, String exceptionCode, String locator) throws Exception {
+        checkOws11Exception(dom, "1.1.0", exceptionCode, locator);
+    }
+
+    /**
+     * Performs basic checks on an OWS 1.1 exception, to ensure it's well formed
+     * and ensuring that a particular exceptionCode is used.
+     */
+    protected void checkOws11Exception(Document dom, String version, String exceptionCode, String locator) throws Exception {
         Element root = dom.getDocumentElement();
         assertEquals("ows:ExceptionReport", root.getNodeName() );
-        assertEquals( "1.1.0", root.getAttribute( "version") );
+        assertEquals( version, root.getAttribute( "version") );
         assertEquals("http://www.opengis.net/ows/1.1", root.getAttribute( "xmlns:ows"));
-        
+
         if ( exceptionCode != null ) {
             assertEquals( 1, dom.getElementsByTagName( "ows:Exception").getLength() );
             Element ex = (Element) dom.getElementsByTagName( "ows:Exception").item(0);
             assertEquals( exceptionCode, ex.getAttribute( "exceptionCode") );
         }
-        
+
         if( locator != null)  {
             assertEquals( 1, dom.getElementsByTagName( "ows:Exception").getLength() );
             Element ex = (Element) dom.getElementsByTagName( "ows:Exception").item(0);
@@ -1804,7 +1862,8 @@ public class GeoServerSystemTestSupport extends GeoServerBaseTestSupport<SystemT
         }
     }
 
-    
+
+
     /**
      * Performs basic checks on an OWS 2.0 exception. The check for status, exception code and locator
      * is optional, leave null if you don't want to check it. 

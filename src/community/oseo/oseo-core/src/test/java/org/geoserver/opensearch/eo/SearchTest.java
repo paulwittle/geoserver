@@ -19,6 +19,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
 
 import org.geoserver.opensearch.eo.response.AtomSearchResponse;
+import org.geoserver.opensearch.eo.response.DescriptionResponse;
 import org.geotools.data.DataStore;
 import org.geotools.data.simple.SimpleFeatureStore;
 import org.geotools.filter.text.cql2.CQL;
@@ -75,13 +76,20 @@ public class SearchTest extends OSEOTestSupport {
                 hasXPath(
                         "/at:feed/at:entry[1]/georss:where/gml:Polygon/gml:exterior/gml:LinearRing/gml:posList",
                         equalTo("89.0 -179.0 89.0 179.0 -89.0 179.0 -89.0 -179.0 89.0 -179.0")));
-        // ... the links (self, metadata)
+        assertThat(dom,
+                hasXPath(
+                        "/at:feed/at:entry[1]/georss:box",
+                        equalTo("-89.0 -179.0 89.0 179.0")));
+        // ... the links (self, metadata, search)
         assertThat(dom, hasXPath(
                 "/at:feed/at:entry[1]/at:link[@rel='self' and  @type='application/atom+xml']/@href",
                 equalTo("http://localhost:8080/geoserver/oseo/search?uid=SENTINEL2&httpAccept=application%2Fatom%2Bxml")));
         assertThat(dom, hasXPath(
                 "/at:feed/at:entry[1]/at:link[@rel='alternate' and @type='application/vnd.iso.19139+xml']/@href",
                 equalTo("http://localhost:8080/geoserver/oseo/metadata?uid=SENTINEL2&httpAccept=application%2Fvnd.iso.19139%2Bxml")));
+        assertThat(dom, hasXPath(
+                "/at:feed/at:entry[1]/at:link[@rel='search' and @type='" + DescriptionResponse.OS_DESCRIPTION_MIME + "']/@href",
+                equalTo("http://localhost:8080/geoserver/oseo/description?parentId=SENTINEL2")));
 
         // check the html description (right one, and param substitution in links
         XPath xPath = getXPath();
@@ -154,7 +162,7 @@ public class SearchTest extends OSEOTestSupport {
         assertEquals(200, response.getStatus());
 
         Document dom = dom(new ByteArrayInputStream(response.getContentAsByteArray()));
-        // print(dom);
+        print(dom);
 
         assertThat(dom, hasXPath("count(/at:feed/at:entry)", equalTo("3")));
         assertThat(dom, hasXPath("count(/at:feed/at:entry/owc:offering)", equalTo("2")));
@@ -582,7 +590,7 @@ public class SearchTest extends OSEOTestSupport {
         assertThat(dom, hasXPath("/at:feed/os:Query"));
         assertThat(dom, hasXPath("/at:feed/os:Query[@count]"));
         assertThat(dom, hasXPath("/at:feed/os:Query[@startIndex='1']"));
-        assertThat(dom, hasXPath("/at:feed/os:Query[@opt:cloudCover='2]']"));
+        assertThat(dom, hasXPath("/at:feed/os:Query[@eo:cloudCover='2]']"));
     }
 
     @Test

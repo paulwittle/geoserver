@@ -6,13 +6,14 @@ ImageMosaic configuration
 Granules
 --------
 
-Each individual image is commonly referred to as a **granule**. Individual granules must have some similarities which are captured here below:
+Each individual image is commonly referred to as a **granule**. In recent releases of GeoServer the similarities requirements
+for the granules have been dropped significantly, including:
 
-* All the granules must share the same coordinate reference system.
+* The granules do not need to share the same coordinate reference system (see :ref:`the multi-CRS mosaic tutorial <multi-crs-mosaic>`)
 
-* All the granules must share the same ColorModel and SampleModel. This means that the granules must share the same pixel layout and photometric interpretation. 
-
-.. warning:: The last limtation has been relaxed when JAI-Ext is enabled to allow users to mix data of the following colormodels RGB, Gray, Paletted. Of course it does not make sense to mosaic data coming from a DEM (usually single band Float or Short) with data coming from Aerial imagery (usually RGB or Gray) but it does make sense to create global mosaics with data coming from different sources and having different colormodels.
+* The granules can be in different color models, with an allowance of mixing gray, RGB, RGBA and indexed color granules
+  (it is however not possible to mix colored granules with scientific data types like as float/double).
+  In order to benefit of mixed color models JAI-Ext support must be enabled, see :ref:`the JAI-EXT support documentation <JAIEXT>`.
 
 In addition it is worth remarking on the fact that currently the ImageMosaic is able to handle raster data whose grid-to-world transformation is a scale and translate transformation, hence no rotation or skew.
 
@@ -277,6 +278,20 @@ The ``PropertyCollectors`` parameter in the example above indicates two addition
 :file:`timeregex.properties`::
 
     regex=[0-9]{8}T[0-9]{9}Z(\?!.\*[0-9]{8}T[0-9]{9}Z.\*)
+
+The above is a property file containing a regex used to extract Date and Time represented in `ISO-8601 <https://en.wikipedia.org/wiki/ISO_8601>`_ as part of the filename.
+(Note the T char between digits for date and digits for time, as per ISO-8601)
+
+In case of custom format datetimes in filename, an additional *format* element should be added after the regex, preceded by a comma, defining the custom representation.
+
+| Example:
+| Temperature_2017111319.tif
+| an hourly Temperature file with datetime = November, 13 2017 at 7:00 PM (the last 2 digits = 19)
+|
+| In that case, the timeregex.properties file should be like this:
+
+    regex=.*([0-9]{10}).*,format=yyyyMMddHH
+
 
 :file:`elevationregex.properties`::
 

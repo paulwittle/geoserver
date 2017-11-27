@@ -20,21 +20,21 @@ import javax.imageio.ImageIO;
 import javax.xml.namespace.QName;
 
 import org.apache.commons.io.IOUtils;
-import org.geoserver.catalog.Catalog;
-import org.geoserver.catalog.LegendInfo;
+import org.geoserver.catalog.*;
 import org.geoserver.catalog.impl.LegendInfoImpl;
 import org.geoserver.data.test.MockData;
 import org.geoserver.data.test.SystemTestData;
 import org.geoserver.data.test.TestData;
 import org.geoserver.platform.resource.Resource;
 import org.geoserver.wms.WMSTestSupport;
+import org.geotools.image.test.ImageAssert;
 import org.geotools.util.Converters;
+import org.junit.After;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 public class GetLegendGraphicTest extends WMSTestSupport {
-   
-    
+
     @Override
     protected void onSetUp(SystemTestData testData) throws Exception {
         super.onSetUp(testData);
@@ -61,8 +61,14 @@ public class GetLegendGraphicTest extends WMSTestSupport {
         File file = getResourceLoader().createFile("styles","legend.png");        
         getResourceLoader().copyFromClassPath( "../legend.png", file,  getClass() );
         testData.addStyle(null, "custom", "point_test.sld", getClass(), catalog, legend);
+
+        // setup a ws specific style with custom legend too
+        WorkspaceInfo defaultWorkspace = catalog.getDefaultWorkspace();
+        File wsFile = getResourceLoader().createFile("workspaces", defaultWorkspace.getName(), "styles","legend.png");
+        getResourceLoader().copyFromClassPath( "../legend.png", wsFile,  getClass() );
+        testData.addStyle(defaultWorkspace, "wsCustom", "point_test.sld", getClass(), catalog, legend);
     }
-    
+
     /**
      * Tests GML output does not break when asking for an area that has no data with
      * GML feature bounding enabled
@@ -140,8 +146,62 @@ public class GetLegendGraphicTest extends WMSTestSupport {
         assertEquals( "green",expectedColor.getGreen(), actualColor.getGreen() );
         assertEquals( "blue",expectedColor.getBlue(), actualColor.getBlue() );
         assertEquals( "alpha",expectedColor.getAlpha(), actualColor.getAlpha() );
-        
     }
+
+    /**
+     * Tests a custom legend graphic with a workspace specific style
+     */
+    @Test
+    public void testCustomLegendWsSpecific() throws Exception {
+        String wsName = getCatalog().getDefaultWorkspace().getName();
+        String styleName = wsName + ":wsCustom";
+        String base = "wms?service=WMS&version=1.1.1&request=GetLegendGraphic" +
+                "&layer=sf:states" +
+                "&format=image/png&width=22&height=22&style=" + styleName;
+
+        BufferedImage image = getAsImage(base, "image/png");
+
+        Resource resource = getResourceLoader().get("/workspaces/" + wsName + "/styles/legend.png");
+        BufferedImage expected = ImageIO.read(resource.file());
+        ImageAssert.assertEquals(expected, image, 0);
+    }
+
+    /**
+     * Tests an custom legend graphic
+     */
+    @Test
+    public void testCustomLegendOnDefaultStyle() throws Exception {
+        Catalog catalog = getCatalog();
+        LayerInfo statesLayer = catalog.getLayerByName("states");
+        StyleInfo statesDefaultStyle = statesLayer.getDefaultStyle();
+        StyleInfo customStyle = catalog.getStyleByName("custom");
+        StyleInfo wsCustomStyle = catalog.getStyleByName("wsCustom");
+
+        Resource resource = getResourceLoader().get("styles/legend.png");
+        BufferedImage expected = ImageIO.read( resource.file() );
+        try {
+            // alter the default style
+            statesLayer.setDefaultStyle(customStyle);
+            catalog.save(statesLayer);
+
+            // get the default legend graphic, it should be the custom image
+            BufferedImage image = getAsImage("wms?service=WMS&version=1.1.1&request=GetLegendGraphic" +
+                    "&layer=sf:states&format=image/png&width=22&height=22", "image/png");
+            ImageAssert.assertEquals(expected, image, 0);
+
+            // the above again, but setting the workspace specific style
+            statesLayer.setDefaultStyle(wsCustomStyle);
+            catalog.save(statesLayer);
+            image = getAsImage("wms?service=WMS&version=1.1.1&request=GetLegendGraphic" +
+                    "&layer=sf:states&format=image/png&width=22&height=22", "image/png");
+            ImageAssert.assertEquals(expected, image, 0);
+        } finally {
+            statesLayer.setDefaultStyle(statesDefaultStyle);
+            catalog.save(statesLayer);
+        }
+
+    }
+
     
     /**
      * Tests an unscaled states legend
@@ -270,5 +330,14 @@ public class GetLegendGraphicTest extends WMSTestSupport {
                         "&layer=" + getLayerId(MockData.LAKES) + "&style=scaleDependent" +
                         "&format=image/png&width=20&height=20&scale=150000", "image/png");
         assertEquals(1, image.getHeight());
+    }
+
+    @Test
+    public void testLegendHeight() throws Exception {
+        String base = "wms?service=WMS&version=1.1.1&request=GetLegendGraphic" +
+            "&layer=sf:states&style=Population" +
+            "&format=image/png&width=20&height=20";
+        BufferedImage image = getAsImage(base, "image/png");
+        assertEquals(80, image.getHeight());
     }
 }

@@ -73,6 +73,23 @@ public class DescribeFeatureTypeTest extends WFS20TestSupport {
                 "wfs?service=WFS&version=2.0.0&request=DescribeFeatureType&typeName=" + typeName);
         assertThat(response.getContentType(), is("text/xml"));
     }
+
+    @Test
+    public void testGetPluralKey() throws Exception {
+	    // the WFS 2.0 spec is contracting itself, says "typename" in a table and "typenames" just below
+        // current CITE tests typenames is used
+        String typeName = getLayerId(CiteTestData.PRIMITIVEGEOFEATURE);
+        MockHttpServletResponse response = getAsServletResponse(
+                "wfs?service=WFS&version=2.0.0&request=DescribeFeatureType&typeNames=" + typeName);
+        assertThat(response.getContentType(), is("application/gml+xml; version=3.2"));
+        Document doc = dom(new ByteArrayInputStream(response.getContentAsString().getBytes()));
+        assertSchema(doc, CiteTestData.PRIMITIVEGEOFEATURE);
+        // override GML 3.2 MIME type with text / xml
+        setGmlMimeTypeOverride("text/xml");
+        response = getAsServletResponse(
+                "wfs?service=WFS&version=2.0.0&request=DescribeFeatureType&typeName=" + typeName);
+        assertThat(response.getContentType(), is("text/xml"));
+    }
     
     @Test
     public void testConcurrentGet() throws Exception {
@@ -234,7 +251,7 @@ public class DescribeFeatureTypeTest extends WFS20TestSupport {
         final QName typeName = CiteTestData.POLYGONS;
         String path = "ows?service=WFS&version=2.0.0&request=DescribeFeatureType&" +
             "typeName=myPrefix:" + typeName.getLocalPart() + 
-            "&namespace=xmlns(myPrefix%3D" + URLEncoder.encode(typeName.getNamespaceURI(), "UTF-8") + ")";
+            "&namespaces=xmlns(myPrefix," + URLEncoder.encode(typeName.getNamespaceURI(), "UTF-8") + ")";
         
         Document doc = getAsDOM(path);
         assertSchema(doc, CiteTestData.POLYGONS);
@@ -306,7 +323,7 @@ public class DescribeFeatureTypeTest extends WFS20TestSupport {
             //then, in cite compliance more, it should not find the type name
             service.setCiteCompliant(true);
             geoServer.save(service);
-            doc = getAsDOM(path);
+            doc = getAsDOM(path, 400);
             //print(doc);
             assertEquals("ows:ExceptionReport", doc.getDocumentElement().getNodeName());
         } finally {

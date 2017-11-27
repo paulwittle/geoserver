@@ -7,6 +7,7 @@ package org.geoserver.wfs;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.regex.Pattern;
 
 import javax.xml.namespace.QName;
 
@@ -20,6 +21,7 @@ import net.opengis.wfs20.Wfs20Factory;
 import org.geoserver.catalog.Catalog;
 import org.geoserver.catalog.FeatureTypeInfo;
 import org.geoserver.catalog.NamespaceInfo;
+import org.geoserver.platform.ServiceException;
 import org.geoserver.wfs.request.GetFeatureRequest;
 import org.geotools.wfs.PropertyValueCollection;
 import org.opengis.feature.type.AttributeDescriptor;
@@ -28,6 +30,8 @@ import org.opengis.filter.expression.PropertyName;
 import org.xml.sax.helpers.NamespaceSupport;
 
 public class GetPropertyValue {
+    
+    Pattern FEATURE_ID_PATTERN = Pattern.compile("@(\\w+:)?id");
 
     GetFeature delegate;
 
@@ -61,6 +65,9 @@ public class GetPropertyValue {
         if (request.getValueReference() == null) {
             throw new WFSException(request, "No valueReference specified", "MissingParameterValue")
                     .locator("valueReference");
+        } else if("".equals(request.getValueReference().trim())) {
+            throw new WFSException(request, "ValueReference cannot be empty", ServiceException.INVALID_PARAMETER_VALUE)
+                    .locator("valueReference");
         }
 
         // do a getFeature request
@@ -87,7 +94,8 @@ public class GetPropertyValue {
                     .replaceAll("\\[.*\\]", ""), getNamespaceSupport());
             AttributeDescriptor descriptor = (AttributeDescriptor) propertyNameNoIndexes
                     .evaluate(featureType.getFeatureType());
-            if (descriptor == null) {
+            boolean featureIdRequest = FEATURE_ID_PATTERN.matcher(request.getValueReference()).matches();
+            if (descriptor == null && !featureIdRequest) {
                 throw new WFSException(request, "No such attribute: " + request.getValueReference());
             }
 

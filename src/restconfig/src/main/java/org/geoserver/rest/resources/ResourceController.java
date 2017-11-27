@@ -16,11 +16,7 @@ import org.geoserver.platform.resource.Resource;
 import org.geoserver.platform.resource.Resource.Type;
 import org.geoserver.platform.resource.ResourceStore;
 import org.geoserver.platform.resource.ResourceStoreFactory;
-import org.geoserver.rest.ObjectToMapWrapper;
-import org.geoserver.rest.RequestInfo;
-import org.geoserver.rest.ResourceNotFoundException;
-import org.geoserver.rest.RestBaseController;
-import org.geoserver.rest.RestException;
+import org.geoserver.rest.*;
 import org.geoserver.rest.converters.XStreamJSONMessageConverter;
 import org.geoserver.rest.converters.XStreamMessageConverter;
 import org.geoserver.rest.converters.XStreamXMLMessageConverter;
@@ -29,11 +25,17 @@ import org.geoserver.util.IOUtils;
 import org.geotools.util.logging.Logging;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.accept.ContentNegotiationStrategy;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.servlet.mvc.condition.PatternsRequestCondition;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -74,6 +76,23 @@ public class ResourceController extends RestBaseController {
     public ResourceController(ResourceStore store) {
         super();
         this.resources = store;
+    }
+
+    /**
+     * Workaround to support format parameter when extension is in path
+     */
+    @Configuration
+    static class ResourceControllerConfiguration {
+        @Bean
+        ContentNegotiationStrategy resourceContentNegotiationStrategy() {
+            return webRequest -> {
+                HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
+                if (new PatternsRequestCondition("/resource", "/resource/**").getMatchingCondition(request) != null) {
+                    return Collections.singletonList(ResourceController.getFormat(request));
+                }
+                return new ArrayList<>();
+            };
+        }
     }
     
     @Override
@@ -133,11 +152,10 @@ public class ResourceController extends RestBaseController {
     
     /**
      * Look up operation query string value, defaults to {@link Operation#DEFAULT} if not provided.
-     * @param request
+     * @param operation
      * @return operation defined by query string, or {@link Operation#DEFAULT} if not provided
      */
-    protected static Operation operation(HttpServletRequest request) {
-        String operation = RESTUtils.getQueryStringValue(request, "operation");
+    protected static Operation operation(String operation) {
         if (operation != null) {
             operation = operation.trim().toUpperCase();
             try {
@@ -152,7 +170,10 @@ public class ResourceController extends RestBaseController {
     }
 
     protected static MediaType getFormat(HttpServletRequest request) {
-        String format = RESTUtils.getQueryStringValue(request, "format");
+        return getFormat(RESTUtils.getQueryStringValue(request, "format"));
+    }
+
+    protected static MediaType getFormat(String format) {
         if ("xml".equals(format)) {
             return MediaType.APPLICATION_XML;
         } else if ("json".equals(format)) {
@@ -189,11 +210,13 @@ public class ResourceController extends RestBaseController {
      * @return Returns wrapped info object, or direct access to resource contents depending on requested operation
      */
     @RequestMapping(method = {RequestMethod.GET, RequestMethod.HEAD}, produces = {MediaType.ALL_VALUE})
-    public Object resourceGet(HttpServletRequest request, HttpServletResponse response) {
+    public Object resourceGet(HttpServletRequest request, HttpServletResponse response,
+                              @RequestParam(name = "operation", required = false, defaultValue = "default") String operationName,
+                              @RequestParam(required = false, defaultValue = MediaType.TEXT_HTML_VALUE) String format) {
         Resource resource = resource(request);
-        Operation operation = operation(request);
+        Operation operation = operation(operationName);
         Object result;
-        response.setContentType(getFormat(request).toString());
+        response.setContentType(getFormat(format).toString());
 
         if (operation == Operation.METADATA) {
             result =  wrapObject(new ResourceMetadataInfo(resource, request), ResourceMetadataInfo.class);
@@ -235,13 +258,14 @@ public class ResourceController extends RestBaseController {
      */
     @PutMapping(consumes = {MediaType.ALL_VALUE})
     @ResponseStatus(HttpStatus.CREATED)
-    public void resourcePut(HttpServletRequest request,HttpServletResponse response){
+    public void resourcePut(HttpServletRequest request,HttpServletResponse response,
+                            @RequestParam(name = "operation", required = false, defaultValue = "default") String operationName){
         Resource resource = resource(request);
         
         if (resource.getType() == Type.DIRECTORY) {
             throw new RestException("Attempting to write data to a directory.",  HttpStatus.METHOD_NOT_ALLOWED );
         }
-        Operation operation = operation(request);
+        Operation operation = operation(operationName);
         if (operation == Operation.METADATA ){
             throw new RestException("Attempting to write data to metadata.",  HttpStatus.METHOD_NOT_ALLOWED );
         }

@@ -13,7 +13,7 @@
  <groupId>org.geoserver</groupId>
  <artifactId>geoserver</artifactId>
  <packaging>pom</packaging>
- <version>2.12-SNAPSHOT</version>
+ <version>2.13-SNAPSHOT</version>
  <name>GeoServer</name>
 
  <scm>
@@ -467,6 +467,16 @@
     <groupId>org.geotools</groupId>
     <artifactId>gt-process-feature</artifactId>
     <version>${gt.version}</version>
+   </dependency>
+   <dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-geopkg</artifactId>
+    <version>${gt.version}</version>
+   </dependency>
+   <dependency>
+     <groupId>org.jdom</groupId>
+     <artifactId>jdom2</artifactId>
+     <version>2.0.6</version>
    </dependency>
 
    <dependency>
@@ -1005,16 +1015,28 @@
     <artifactId>jt-concurrent-tile-cache</artifactId>
     <version>${jaiext.version}</version>
    </dependency>
-   <dependency>
-    <groupId>org.eclipse.emf</groupId>
-    <artifactId>common</artifactId>
-    <version>2.6.0</version>
-   </dependency>
-   <dependency>
-    <groupId>org.eclipse.emf</groupId>
-    <artifactId>ecore</artifactId>
-    <version>2.6.1</version>
-   </dependency>
+         <!-- EMF -->
+
+      <dependency>
+	    <groupId>org.eclipse.emf</groupId>
+	    <artifactId>org.eclipse.emf.common</artifactId>
+	    <version>2.12.0</version>
+    </dependency>
+	<dependency>
+		<groupId>org.eclipse.emf</groupId>
+		<artifactId>org.eclipse.emf.ecore.xmi</artifactId>
+		<version>2.12.0</version>
+	</dependency>
+	<dependency>
+		<groupId>org.eclipse.emf</groupId>
+		<artifactId>org.eclipse.emf.ecore</artifactId>
+		<version>2.12.0</version>
+	</dependency>
+	<dependency>
+		<groupId>org.eclipse.xsd</groupId>
+		<artifactId>org.eclipse.xsd</artifactId>
+		<version>2.12.0</version>
+	</dependency>
    <dependency>
     <groupId>org.freemarker</groupId>
     <artifactId>freemarker</artifactId>
@@ -1227,6 +1249,21 @@
            <artifactId>wicket-core</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.marlin</groupId>
+      <artifactId>marlin</artifactId>
+      <version>${marlin.version}</version>
+    </dependency>
+    <dependency>
+     <groupId>com.github.oshi</groupId>
+     <artifactId>oshi-core</artifactId>
+     <version>3.4.3</version>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>${postgresql.jdbc.version}</version>
     </dependency>
   </dependencies>
  </dependencyManagement>
@@ -1459,7 +1496,7 @@
       <descriptor>release/ext-vectortiles.xml</descriptor>
       <descriptor>release/ext-ysld.xml</descriptor>
      </descriptors>
-     <finalName>geoserver-2.12-SNAPSHOT</finalName>
+     <finalName>geoserver-2.13-SNAPSHOT</finalName>
      <outputDirectory>${project.build.directory}/release</outputDirectory>
     </configuration>
    </plugin>
@@ -1804,15 +1841,18 @@
   <module>gwc</module>
   <module>rest</module>
   <module>restconfig</module>
+  <module>restconfig-wcs</module>
+  <module>restconfig-wfs</module>
+  <module>restconfig-wms</module>
   <module>web</module>
   <module>community</module>
   <module>extension</module>
  </modules>
 
  <properties>
-  <gs.version>2.12-SNAPSHOT</gs.version>
-  <gt.version>18-SNAPSHOT</gt.version>
-  <gwc.version>1.12-SNAPSHOT</gwc.version>
+  <gs.version>2.13-SNAPSHOT</gs.version>
+  <gt.version>19-SNAPSHOT</gt.version>
+  <gwc.version>1.13-SNAPSHOT</gwc.version>
   <spring.version>4.3.7.RELEASE</spring.version>
   <spring.security.version>4.0.4.RELEASE</spring.security.version> 
   <servlet-api.version>3.0.1</servlet-api.version>
@@ -1821,8 +1861,8 @@
   <poi.version>3.14</poi.version>
   <wicket.version>7.6.0</wicket.version>
   <ant.version>1.8.4</ant.version>
-  <imageio-ext.version>1.1.17</imageio-ext.version>
-  <jaiext.version>1.0.14</jaiext.version>
+  <imageio-ext.version>1.1.19</imageio-ext.version>
+  <jaiext.version>1.0.17</jaiext.version>
   <java.awt.headless>true</java.awt.headless>
   <sun.java2d.d3d>true</sun.java2d.d3d>
   <jvm.opts></jvm.opts>
@@ -1854,6 +1894,8 @@
   <jackson1.version>1.9.13</jackson1.version>
   <jackson2.version>2.5.0</jackson2.version>
   <compress-lzf.version>1.0.3</compress-lzf.version>
+  <marlin.version>0.7.5-Unsafe</marlin.version>
+  <postgresql.jdbc.version>42.1.1</postgresql.jdbc.version>
  </properties>
 
  <profiles>

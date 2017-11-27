@@ -35,6 +35,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import static org.junit.Assert.assertTrue;
+
 /**
  * 
  * @author Niels Charlier
@@ -78,6 +80,14 @@ public class ResourceControllerTest extends GeoServerSystemTestSupport {
 
         myRes = getDataDirectory().get("/mydir/myres");
         try (OutputStreamWriter os = new OutputStreamWriter(myRes.out())) {
+            os.append(STR_MY_TEST);
+        }
+
+        try (OutputStreamWriter os = new OutputStreamWriter(getDataDirectory().get("/mydir2/myres.xml").out())) {
+            os.append(STR_MY_TEST);
+        }
+
+        try (OutputStreamWriter os = new OutputStreamWriter(getDataDirectory().get("/mydir2/myres.json").out())) {
             os.append(STR_MY_TEST);
         }
 
@@ -130,6 +140,29 @@ public class ResourceControllerTest extends GeoServerSystemTestSupport {
                 + "  \"type\": \"resource\""
                 + "}}";
         JSONAssert.assertEquals(expected, (JSONObject) json);
+    }
+
+    @Test
+    public void testResourceMetadataWithResourceExtension() throws Exception {
+        String str = getAsString(RestBaseController.ROOT_PATH+"/resource/mydir2/myres.xml").trim();
+        Assert.assertEquals(STR_MY_TEST, str);
+
+        str = getAsString(RestBaseController.ROOT_PATH+"/resource/mydir2/myres.json").trim();
+        Assert.assertEquals(STR_MY_TEST, str);
+
+        //format=xml should return XML regardless of extension
+        XMLUnit.setXpathNamespaceContext(NS_XML);
+        str = getAsString(RestBaseController.ROOT_PATH+"/resource/mydir2/myres.xml?operation=mEtAdATa&format=xml");
+        assertTrue(str.startsWith("<ResourceMetadata"));
+        str = getAsString(RestBaseController.ROOT_PATH+"/resource/mydir2/myres.json?operation=mEtAdATa&format=xml");
+        assertTrue(str.startsWith("<ResourceMetadata"));
+
+        //format=json should return JSON regardless of extension
+        str = getAsString(RestBaseController.ROOT_PATH+"/resource/mydir2/myres.xml?operation=metadata&format=json");
+        assertTrue(str.startsWith("{\"ResourceMetadata\""));
+
+        str = getAsString(RestBaseController.ROOT_PATH+"/resource/mydir2/myres.json?operation=metadata&format=json");
+        assertTrue(str.startsWith("{\"ResourceMetadata\""));
     }
     
     @Test
@@ -243,6 +276,22 @@ public class ResourceControllerTest extends GeoServerSystemTestSupport {
         XMLAssert.assertXpathEvaluatesTo("http://localhost:8080/geoserver"+RestBaseController.ROOT_PATH+"/resource/mydir/myres", 
                 "/x:html/x:body/x:ul/x:li[4]/x:ul/x:li/x:a/@href", doc);
     }
+
+    @Test
+    public void testDirectoryRootXML() throws Exception {
+        XMLUnit.setXpathNamespaceContext(NS_XML);
+        Document doc = getAsDOM(RestBaseController.ROOT_PATH+"/resource?format=xml");
+        XMLAssert.assertXpathEvaluatesTo("", "/ResourceDirectory/name", doc);
+        XMLAssert.assertXpathEvaluatesTo("", "/ResourceDirectory/parent", doc);
+    }
+
+    @Test
+    public void testDirectoryRootHTML() throws Exception {
+        XMLUnit.setXpathNamespaceContext(NS_HTML);
+        Document doc = getAsDOM(RestBaseController.ROOT_PATH+"/resource?format=html");
+        XMLAssert.assertXpathEvaluatesTo("Name: ''", "/x:html/x:body/x:ul/x:li[1]", doc);
+        XMLAssert.assertXpathEvaluatesTo("Parent: ", "/x:html/x:body/x:ul/x:li[2]", doc);
+    }
     
     @Test
     public void testDirectoryHeaders() throws Exception {
@@ -292,8 +341,8 @@ public class ResourceControllerTest extends GeoServerSystemTestSupport {
         put(RestBaseController.ROOT_PATH+"/resource/mydir/mynewres?operation=cOpY", "/mydir/myres");
         
         Resource newRes = getDataDirectory().get("/mydir/mynewres");
-        Assert.assertTrue(Resources.exists(myRes));
-        Assert.assertTrue(Resources.exists(newRes));    
+        assertTrue(Resources.exists(myRes));
+        assertTrue(Resources.exists(newRes));
         try (InputStream is = newRes.in()) {
             Assert.assertEquals(STR_MY_TEST, IOUtils.toString(is));
         }
@@ -307,7 +356,7 @@ public class ResourceControllerTest extends GeoServerSystemTestSupport {
         
         Resource newRes = getDataDirectory().get("/mydir/mynewres");        
         Assert.assertFalse(Resources.exists(myRes));
-        Assert.assertTrue(Resources.exists(newRes));        
+        assertTrue(Resources.exists(newRes));
         try (InputStream is = newRes.in()) {
             Assert.assertEquals(STR_MY_TEST, IOUtils.toString(is));
         }
@@ -321,10 +370,10 @@ public class ResourceControllerTest extends GeoServerSystemTestSupport {
         put(RestBaseController.ROOT_PATH+"/resource/mynewdir?operation=move", "/mydir");
         
         Resource newDir = getDataDirectory().get("/mynewdir");
-        Assert.assertTrue(Resources.exists(newDir));      
-        Assert.assertTrue(newDir.getType() == Type.DIRECTORY);
+        assertTrue(Resources.exists(newDir));
+        assertTrue(newDir.getType() == Type.DIRECTORY);
         Assert.assertFalse(Resources.exists(myRes));      
-        Assert.assertTrue(Resources.exists(getDataDirectory().get("/mynewdir/myres")));
+        assertTrue(Resources.exists(getDataDirectory().get("/mynewdir/myres")));
         
         newDir.renameTo(getDataDirectory().get("/mydir"));
     }
@@ -333,7 +382,7 @@ public class ResourceControllerTest extends GeoServerSystemTestSupport {
     public void testDelete() throws Exception {
         Resource newRes = getDataDirectory().get("/mydir/mynewres"); 
         Resources.copy(myRes, newRes);
-        Assert.assertTrue(Resources.exists(newRes));
+        assertTrue(Resources.exists(newRes));
         
         deleteAsServletResponse(RestBaseController.ROOT_PATH+"/resource/mydir/mynewres");
         

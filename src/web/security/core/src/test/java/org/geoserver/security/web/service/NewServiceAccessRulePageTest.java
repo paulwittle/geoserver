@@ -7,6 +7,7 @@ package org.geoserver.security.web.service;
 
 import static org.junit.Assert.*;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.wicket.extensions.markup.html.form.palette.component.Recorder;
@@ -26,16 +27,15 @@ public class NewServiceAccessRulePageTest extends AbstractSecurityWicketTestSupp
     public void testFill() throws Exception {
         
         initializeForXML();
-        //insertValues();        
         tester.startPage(page=new NewServiceAccessRulePage());        
         tester.assertRenderedPage(NewServiceAccessRulePage.class);
         
         FormTester form = tester.newFormTester("form");
-        int index = indexOf(page.serviceChoice.getChoices(),"wms");        
+        int index = indexOf(page.serviceChoice.getChoices(),"wfs");
         form.select("service", index);
         tester.executeAjaxEvent("form:service", "change");
         form = tester.newFormTester("form");
-        index = indexOf(page.methodChoice.getChoices(),"GetStyles");
+        index = indexOf(page.methodChoice.getChoices(),"GetFeatureWithLock");
         form.select("method", index);
         tester.assertComponent("form:roles:palette:recorder", Recorder.class);
 
@@ -67,7 +67,7 @@ public class NewServiceAccessRulePageTest extends AbstractSecurityWicketTestSupp
 
         ServiceAccessRule foundRule=null;
         for (ServiceAccessRule rule : ServiceAccessRuleDAO.get().getRules()) {
-            if ("wms".equals(rule.getService())&& "GetStyles".equals(rule.getMethod())) {
+            if ("wfs".equals(rule.getService())&& "GetFeatureWithLock".equals(rule.getMethod())) {
                 foundRule = rule;
                 break;
             }
@@ -77,6 +77,42 @@ public class NewServiceAccessRulePageTest extends AbstractSecurityWicketTestSupp
         assertEquals("ROLE_NEW",foundRule.getRoles().iterator().next());        
     }
     
+    /**
+     * See GEOS-7495
+     */
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testListWfsOperations() throws Exception {
+        initializeForXML();
+        // insertValues();
+        tester.startPage(page = new NewServiceAccessRulePage());
+        tester.assertRenderedPage(NewServiceAccessRulePage.class);
+
+        FormTester form = tester.newFormTester("form");
+        int index = indexOf(page.serviceChoice.getChoices(), "wfs");
+        form.select("service", index);
+        tester.executeAjaxEvent("form:service", "change");
+
+        List<String> wfsOperations = (List<String>) page.methodChoice.getChoices();
+        List<String> expectedWfsOperations = Arrays.asList(
+                "*", 
+                "GetCapabilities", 
+                "DescribeFeatureType", 
+                "GetFeature",
+                "LockFeature", 
+                "Transaction", 
+                "GetGmlObject", 
+                "DropStoredQuery", 
+                "CreateStoredQuery",
+                "GetFeatureWithLock", 
+                "DescribeStoredQueries", 
+                "GetPropertyValue", 
+                "ListStoredQueries");
+        
+        assertEquals(expectedWfsOperations.size(), wfsOperations.size());
+        assertTrue(wfsOperations.containsAll(expectedWfsOperations));
+    }
+    
     @Test
     public void testDuplicateRule() throws Exception {
         initializeForXML();
@@ -84,16 +120,16 @@ public class NewServiceAccessRulePageTest extends AbstractSecurityWicketTestSupp
         tester.startPage(page=new NewServiceAccessRulePage());
                 
         FormTester form = tester.newFormTester("form");
-        int index = indexOf(page.serviceChoice.getChoices(),"wms");        
+        int index = indexOf(page.serviceChoice.getChoices(),"wfs");
         form.select("service", index);
         tester.executeAjaxEvent("form:service", "change");
         form = tester.newFormTester("form");
-        index = indexOf(page.methodChoice.getChoices(),"GetMap");
+        index = indexOf(page.methodChoice.getChoices(),"GetFeature");
         form.select("method", index);
-        form.setValue("roles:palette:recorder", "ROLE_WMS");
+        form.setValue("roles:palette:recorder", "ROLE_WFS");
                         
         form.submit("save");                
-        assertTrue(testErrorMessagesWithRegExp(".*wms\\.GetMap.*"));
+        assertTrue(testErrorMessagesWithRegExp(".*wfs\\.GetFeature.*"));
         tester.assertRenderedPage(NewServiceAccessRulePage.class);
     }
     
@@ -104,11 +140,11 @@ public class NewServiceAccessRulePageTest extends AbstractSecurityWicketTestSupp
         tester.startPage(page=new NewServiceAccessRulePage());
                 
         FormTester form = tester.newFormTester("form");
-        int index = indexOf(page.serviceChoice.getChoices(),"wms");        
+        int index = indexOf(page.serviceChoice.getChoices(),"wfs");
         form.select("service", index);
         tester.executeAjaxEvent("form:service", "change");
         form = tester.newFormTester("form");
-        index = indexOf(page.methodChoice.getChoices(),"GetStyles");
+        index = indexOf(page.methodChoice.getChoices(),"GetFeature");
         form.select("method", index);
                         
         form.submit("save");

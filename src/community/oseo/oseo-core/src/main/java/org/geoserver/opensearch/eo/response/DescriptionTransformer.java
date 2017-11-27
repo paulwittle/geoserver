@@ -39,6 +39,8 @@ public class DescriptionTransformer extends LambdaTransformerBase {
 
     private class OSEODescriptionTranslator extends LambdaTranslatorSupport {
 
+        private static final String CEOS_SUPPORTED_VERSION = "CEOS-OS-BP-V1.2/L1";
+
         public OSEODescriptionTranslator(ContentHandler contentHandler) {
             super(contentHandler);
         }
@@ -53,9 +55,7 @@ public class DescriptionTransformer extends LambdaTransformerBase {
             namespaces.put("xmlns:geo", "http://a9.com/-/opensearch/extensions/geo/1.0/");
             namespaces.put("xmlns:time", "http://a9.com/-/opensearch/extensions/time/1.0/");
             namespaces.put("xmlns:eo", "http://a9.com/-/opensearch/extensions/eo/1.0/");
-            for (OpenSearchAccess.ProductClass pc : OpenSearchAccess.ProductClass.values()) {
-                namespaces.put("xmlns:" + pc.getPrefix(), pc.getNamespace());
-            }
+            namespaces.put("xmlns:atom  ", "http://www.w3.org/2005/Atom");
             element("OpenSearchDescription", () -> describeOpenSearch(description),
                     attributes(namespaces));
         }
@@ -70,16 +70,19 @@ public class DescriptionTransformer extends LambdaTransformerBase {
             element("Contact", gs.getSettings().getContact().getContactEmail());
             String tags = oseo.getKeywords().stream().map(k -> k.getValue())
                     .collect(Collectors.joining(" "));
+            tags = tags + " " + CEOS_SUPPORTED_VERSION;
             element("Tags", tags);
             element("Url", NO_CONTENTS,
                     attributes("rel", "self", //
                             "template", buildSelfUrl(description), //
                             "type", "application/opensearchdescription+xml"));
+            String relValue = description.getParentId() == null ? "collection" : "results";
             element("Url", () -> describeParameters(description),
                     attributes( //
-                            "rel", "results", //
+                            "rel", relValue, //
                             "template", buildResultsUrl(description, "atom"), //
-                            "type", "application/atom+xml"));
+                            "type", "application/atom+xml",
+                            "indexOffset", "1"));
             element("LongName", oseo.getTitle());
             element("Developer", oseo.getMaintainer());
             element("SyndicationRight", "open"); // make configurable?
@@ -124,9 +127,39 @@ public class DescriptionTransformer extends LambdaTransformerBase {
                     paramSpec + "&httpAccept=" + ResponseUtils.urlEncode(format));
         }
 
+        public String buildSearchTermsDocLink(OSEODescription description) {
+            String baseURL = description.getBaseURL();
+            String url = buildURL(baseURL, "docs/searchTerms.html", null, URLType.RESOURCE);
+            return url;
+        }
+
         private void describeParameters(OSEODescription description) {
             for (Parameter param : description.getSearchParameters()) {
                 Runnable contentsEncoder = null;
+
+                // TODO: make this generic by adding lambdas into the parameter metadata?
+                // difficulty is passing the methods to build elements (we could make them
+                // visible or pass a lexical handler
+                if ("searchTerms".equals(param.getName()) ) {
+                    String searchTermsDocLink = buildSearchTermsDocLink(description);
+                    contentsEncoder = () -> {
+                        element("atom:link", (Runnable) null,
+                                attributes( //
+                                        "rel", "profile", //
+                                        "href", searchTermsDocLink, //
+                                        "title", "Simple search term parameter specification"));
+                    };
+                } else if ("geometry".equals(param.getName())) {
+                    contentsEncoder  = () -> {
+                        for (String type : new String[] {"LINESTRING", "POINT", "POLYGON", "MULTILINESTRING", "MULTIPOINT", "MULTIPOLYGON"}) {
+                            element("atom:link", (Runnable) null, attributes(
+                                    "rel", "profile", //
+                                    "href", "http://www.opengis.net/wkt/" + type, //
+                                    "title", "This service accepts WKT " + type)
+                            );
+                        }  
+                    };
+                }
 
                 final Map<String, String> map = new LinkedHashMap<>();
                 map.put("name", param.key);
@@ -156,6 +189,7 @@ public class DescriptionTransformer extends LambdaTransformerBase {
                     }
                 }
                 element("param:Parameter", contentsEncoder, attributes(map));
+
             }
         }
 

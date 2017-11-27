@@ -16,6 +16,7 @@ API
 The following links provide direct access to the GeoServer REST API documentation, including definitions and examples of each endpoint:
 
 * :api:`/about/manifests <manifests.yaml>`
+* :api:`/datastores <datastores.yaml>`
 * :api:`/coverages <coverages.yaml>`
 * :api:`/coveragestores <coveragestores.yaml>`
 * :api:`/featuretypes <featuretypes.yaml>`
@@ -24,8 +25,9 @@ The following links provide direct access to the GeoServer REST API documentatio
 * :api:`/layers <layers.yaml>`
 * :api:`/monitoring <monitoring.yaml>`
 * :api:`/namespaces <namespaces.yaml>`
-* :api:`/owsservices <owsservices.yaml>`
+* :api:`/services/wms|wfs|wcs/settings <owsservices.yaml>`
 * :api:`/reload <reload.yaml>`
+* :api:`/resource <resource.yaml>`
 * :api:`/security <security.yaml>`
 * :api:`/settings <settings.yaml>`
 * :api:`/structuredcoverages <structuredcoverages.yaml>`
@@ -34,13 +36,38 @@ The following links provide direct access to the GeoServer REST API documentatio
 * :api:`/transforms <transforms.yaml>`
 * :api:`/wmslayers <wmslayers.yaml>`
 * :api:`/wmsstores <wmsstores.yaml>`
+* :api:`/wmtslayers <wmtslayers.yaml>`
+* :api:`/wmtsstores <wmtsstores.yaml>`
 * :api:`/workspaces <workspaces.yaml>`
+* :api:`/usergroup <usergroup.yaml>`
+* :api:`/roles <roles.yaml>`
+
+* GeoWebCache:
+
+  * :api:`/bounds <gwcbounds.yaml>`
+  * :api:`/diskquota <gwcdiskquota.yaml>`
+  * :api:`/filterupdate <gwcfilterupdate.yaml>`
+  * :api:`/index <gwcindex.yaml>`
+  * :api:`/layers <gwclayers.yaml>`
+  * :api:`/masstruncate <gwcmasstruncate.yaml>`
+  * :api:`/statistics <gwcmemorycachestatistics.yaml>`
+  * :api:`/reload <gwcreload.yaml>`
+  * :api:`/seed <gwcseed.yaml>`
+
 * Importer extension:
 
   * :api:`/imports <importer.yaml>`
   * :api:`/imports (tasks) <importerTasks.yaml>`
   * :api:`/imports (transforms) <importerTransforms.yaml>`
   * :api:`/imports (data) <importerData.yaml>`
+
+* Monitor extension:
+  
+  * :api:`/monitor <monitoring.yaml>`
+
+* XSLT extension:
+
+  * :api:`/services/wfs/transforms <transforms.yaml>`
 
 .. note:: You can also view the original :ref:`rest_api` section.
 
@@ -52,7 +79,7 @@ This section contains a number of examples which illustrate some of the most com
 
 .. toctree::
    :maxdepth: 1
-   
+
    about
    fonts
    layergroups
@@ -64,7 +91,5 @@ This section contains a number of examples which illustrate some of the most com
 .. toctree::
    :maxdepth: 1
    :hidden:
-   
+
    api/index
-
-

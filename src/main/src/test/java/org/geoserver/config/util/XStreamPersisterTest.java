@@ -54,6 +54,8 @@ import org.geoserver.catalog.NamespaceInfo;
 import org.geoserver.catalog.StyleInfo;
 import org.geoserver.catalog.WMSLayerInfo;
 import org.geoserver.catalog.WMSStoreInfo;
+import org.geoserver.catalog.WMTSLayerInfo;
+import org.geoserver.catalog.WMTSStoreInfo;
 import org.geoserver.catalog.WorkspaceInfo;
 import org.geoserver.catalog.impl.CatalogImpl;
 import org.geoserver.catalog.impl.CoverageDimensionImpl;
@@ -61,6 +63,7 @@ import org.geoserver.catalog.impl.CoverageStoreInfoImpl;
 import org.geoserver.catalog.impl.DataStoreInfoImpl;
 import org.geoserver.catalog.impl.MetadataLinkInfoImpl;
 import org.geoserver.catalog.impl.WMSStoreInfoImpl;
+import org.geoserver.catalog.impl.WMTSStoreInfoImpl;
 import org.geoserver.config.ContactInfo;
 import org.geoserver.config.GeoServerFactory;
 import org.geoserver.config.GeoServerInfo;
@@ -516,6 +519,42 @@ public class XStreamPersisterTest {
         
         Document dom = dom( in( out ) );
         assertEquals( "style", dom.getDocumentElement().getNodeName() );
+
+        catalog.add(s2);
+        assertNull(s2.getWorkspace());
+    }
+
+    @Test
+    public void testWorkspaceStyle() throws Exception {
+        Catalog catalog = new CatalogImpl();
+        CatalogFactory cFactory = catalog.getFactory();
+
+        WorkspaceInfo ws = cFactory.createWorkspace();
+        ws.setName( "foo" );
+
+        StyleInfo s1 = cFactory.createStyle();
+        s1.setName( "bar" );
+        s1.setFilename( "bar.sld" );
+        s1.setWorkspace(ws);
+
+        ByteArrayOutputStream out = out();
+        persister.save( s1, out );
+
+        ByteArrayInputStream in = in( out );
+
+        StyleInfo s2 = persister.load(in,StyleInfo.class);
+        assertEquals( "bar", s2.getName() );
+
+        assertNotNull( s2.getWorkspace() );
+        assertEquals( "foo", s2.getWorkspace().getId() );
+
+        Document dom = dom( in( out ) );
+        assertEquals( "style", dom.getDocumentElement().getNodeName() );
+
+        catalog.add(ws);
+        catalog.add(s2);
+        //Make sure the catalog resolves the workspace
+        assertEquals("foo", s2.getWorkspace().getName());
     }
     
     @Test
@@ -670,7 +709,7 @@ public class XStreamPersisterTest {
     }
 
     @Test
-    public void testWMSLayer() throws Exception {
+    public void testWMTSLayer() throws Exception {
         Catalog catalog = new CatalogImpl();
         CatalogFactory cFactory = catalog.getFactory();
         
@@ -683,12 +722,56 @@ public class XStreamPersisterTest {
         ns.setURI( "http://acme.org" );
         catalog.add( ns );
         
+        WMTSStoreInfo wmts = cFactory.createWebMapTileServer();
+        wmts.setWorkspace( ws );
+        wmts.setName( "foo" );
+        wmts.setCapabilitiesURL( "http://fake.host/wmts?request=getCapabilities");
+        catalog.add( wmts );
+        
+        WMTSLayerInfo wl = cFactory.createWMTSLayer();
+        wl.setStore( wmts );
+        wl.setNamespace( ns );
+        wl.setName( "wmtsLayer" );
+        wl.setAbstract( "abstract");
+        wl.setSRS( "EPSG:4326");
+        wl.setNativeCRS( CRS.decode( "EPSG:4326") );
+        
+        ByteArrayOutputStream out = out();
+        persister.save( wl, out );
+        persister.setCatalog( catalog );
+        wl = persister.load( in( out ), WMTSLayerInfo.class );
+        assertNotNull( wl );
+        
+        assertEquals( "wmtsLayer", wl.getName() );
+        assertEquals( wmts, wl.getStore() );
+        assertEquals( ns, wl.getNamespace() );
+        assertEquals( "EPSG:4326", wl.getSRS() );
+        assertTrue( CRS.equalsIgnoreMetadata( CRS.decode( "EPSG:4326"), wl.getNativeCRS() ) );
+        
+        Document dom = dom( in( out ) );
+        assertEquals( "wmtsLayer", dom.getDocumentElement().getNodeName() );
+    }
+
+    @Test
+    public void testWMSLayer() throws Exception {
+        Catalog catalog = new CatalogImpl();
+        CatalogFactory cFactory = catalog.getFactory();
+
+        WorkspaceInfo ws = cFactory.createWorkspace();
+        ws.setName( "foo" );
+        catalog.add( ws );
+
+        NamespaceInfo ns = cFactory.createNamespace();
+        ns.setPrefix( "acme" );
+        ns.setURI( "http://acme.org" );
+        catalog.add( ns );
+
         WMSStoreInfo wms = cFactory.createWebMapServer();
         wms.setWorkspace( ws );
         wms.setName( "foo" );
         wms.setCapabilitiesURL( "http://fake.host/wms?request=getCapabilities");
         catalog.add( wms );
-        
+
         WMSLayerInfo wl = cFactory.createWMSLayer();
         wl.setStore( wms );
         wl.setNamespace( ns );
@@ -696,22 +779,22 @@ public class XStreamPersisterTest {
         wl.setAbstract( "abstract");
         wl.setSRS( "EPSG:4326");
         wl.setNativeCRS( CRS.decode( "EPSG:4326") );
-        
+
         ByteArrayOutputStream out = out();
         persister.save( wl, out );
-        
+
         // System.out.println( new String(out.toByteArray()) );
-        
+
         persister.setCatalog( catalog );
         wl = persister.load( in( out ), WMSLayerInfo.class );
         assertNotNull( wl );
-        
+
         assertEquals( "wmsLayer", wl.getName() );
         assertEquals( wms, wl.getStore() );
         assertEquals( ns, wl.getNamespace() );
         assertEquals( "EPSG:4326", wl.getSRS() );
         assertTrue( CRS.equalsIgnoreMetadata( CRS.decode( "EPSG:4326"), wl.getNativeCRS() ) );
-        
+
         Document dom = dom( in( out ) );
         assertEquals( "wmsLayer", dom.getDocumentElement().getNodeName() );
     }

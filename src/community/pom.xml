@@ -9,7 +9,7 @@
   <parent>
     <groupId>org.geoserver</groupId>
     <artifactId>geoserver</artifactId>
-    <version>2.12-SNAPSHOT</version>
+    <version>2.13-SNAPSHOT</version>
   </parent>
 
   <groupId>org.geoserver</groupId>
@@ -62,7 +62,7 @@
           <!-- <descriptor>release/ext-rest-upload.xml</descriptor> -->
           <descriptor>release/ext-gwc-distributed.xml</descriptor>  
           <descriptor>release/ext-geofence-server.xml</descriptor>
-          <descriptor>release/ext-gwc-s3.xml</descriptor>	
+          <descriptor>release/ext-gwc-s3.xml</descriptor>
           <descriptor>release/ext-gdal-wcs.xml</descriptor>
           <descriptor>release/ext-gdal-wps.xml</descriptor>
           <descriptor>release/ext-wps-jdbc.xml</descriptor>
@@ -72,17 +72,20 @@
           <descriptor>release/ext-jdbcstore.xml</descriptor>
           <descriptor>release/ext-ncwms.xml</descriptor>
           <descriptor>release/ext-gwc-sqlite.xml</descriptor> 
-          <!-- <descriptor>release/ext-geogig.xml</descriptor> -->
+          <descriptor>release/ext-geogig.xml</descriptor>
           <descriptor>release/ext-oauth2-google.xml</descriptor>
           <descriptor>release/ext-oauth2-github.xml</descriptor>
           <descriptor>release/ext-oauth2-geonode.xml</descriptor>
-          <!-- <descriptor>release/ext-backup-restore.xml</descriptor> -->
+          <descriptor>release/ext-backup-restore.xml</descriptor>
           <descriptor>release/ext-wmts-multi-dimensional.xml</descriptor> 
           <descriptor>release/ext-onelogin.xml</descriptor> 
           <descriptor>release/ext-notification.xml</descriptor>
           <descriptor>release/ext-ows-simulate.xml</descriptor> 
           <descriptor>release/ext-jdbc-metrics.xml</descriptor>
-          <descriptor>release/ext-opensearch-eo.xml</descriptor>  
+          <descriptor>release/ext-opensearch-eo.xml</descriptor>
+          <descriptor>release/ext-mbstyle.xml</descriptor> 
+          <descriptor>release/ext-status-monitoring.xml</descriptor>
+          <descriptor>release/ext-nsg-wmts-profile.xml</descriptor>
         </descriptors>
       </configuration>
      </plugin>
@@ -199,7 +202,7 @@
         <module>spatialite</module>
         <module>jdbcconfig</module>
         <module>feature-aggregate</module>
-        <!-- <module>script</module> -->
+        <module>script</module>
         <module>wms-eo</module>
         <module>colormap</module>
         <module>mbtiles</module>
@@ -221,12 +224,12 @@
         <module>wps-remote</module>
         <module>wps-jdbc</module>
         <module>release</module>
-        <!-- <module>geogig</module> -->
+        <module>geogig</module>
         <module>gwc-distributed</module>
         <module>jdbcstore</module>
         <module>gdal</module>
         <module>gwc-s3</module>
-        <!-- <module>backup-restore</module> -->
+        <module>backup-restore</module>
         <module>ncwms</module>
         <module>web-resource</module>
         <module>gwc-sqlite</module>
@@ -242,6 +245,11 @@
         <module>ows-simulate</module>
         <module>jdbc-metrics</module>
         <module>oseo</module>
+        <module>mbstyle</module>
+        <module>s3-geotiff</module>
+        <module>status-monitoring</module>
+        <module>nsg-profiles/nsg-wfs-profile</module>
+        <module>nsg-profiles/nsg-wmts-profile</module>
       </modules>
     </profile>
     <profile>
@@ -531,5 +539,29 @@
         <module>jdbc-metrics</module>
       </modules>
     </profile>
-  </profiles>
+    <profile>
+      <id>s3-geotiff</id>
+      <modules>
+        <module>s3-geotiff</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>status-monitoring</id>
+      <modules>
+        <module>status-monitoring</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>nsg-wfs-profile</id>
+      <modules>
+        <module>nsg-profiles/nsg-wfs-profile</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>nsg-wmts-profile</id>
+      <modules>
+        <module>nsg-profiles/nsg-wmts-profile</module>
+      </modules>
+    </profile>
+  </profiles>  
 </project>

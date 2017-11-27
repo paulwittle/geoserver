@@ -62,6 +62,12 @@ paths:
           required: true          
           schema:
             $ref: "#/definitions/Workspace"
+        - name: default
+          in: query
+          description: New workspace will be the used as the default. Allowed values are true or false,  The default value is false.
+          required: false
+          type: boolean
+          default: false
       consumes: 
         - application/json
         - application/xml
@@ -160,6 +166,12 @@ paths:
           description: name of workspace
           required: true
           type: string
+        - name: workspaceBody
+          description: The layer group body information to upload.
+          in: body
+          required: true          
+          schema:
+            $ref: "#/definitions/Workspace"
     post:
       operationId: postWorkspace
       responses:

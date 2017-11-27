@@ -92,25 +92,25 @@
         <AttributeMapping>
           <targetAttribute>st:Measurement</targetAttribute>
           <idExpression>
-            <OCQL>collectionId('measurements')</OCQL>
+            <OCQL>collectionId()</OCQL>
           </idExpression>
         </AttributeMapping>
         <AttributeMapping>
           <targetAttribute>st:name</targetAttribute>
           <sourceExpression>
-            <OCQL>jsonSelect('measurements.name')</OCQL>
+            <OCQL>jsonSelect('name')</OCQL>
           </sourceExpression>
         </AttributeMapping>
         <AttributeMapping>
           <targetAttribute>st:unit</targetAttribute>
           <sourceExpression>
-            <OCQL>jsonSelect('measurements.unit')</OCQL>
+            <OCQL>jsonSelect('unit')</OCQL>
           </sourceExpression>
         </AttributeMapping>
         <AttributeMapping>
           <targetAttribute>st:values</targetAttribute>
           <sourceExpression>
-            <OCQL>collectionLink('measurements.values')</OCQL>
+            <OCQL>collectionLink('values')</OCQL>
             <linkElement>st:Value</linkElement>
             <linkField>FEATURE_LINK[2]</linkField>
           </sourceExpression>
@@ -119,7 +119,7 @@
         <AttributeMapping>
           <targetAttribute>FEATURE_LINK[1]</targetAttribute>
           <sourceExpression>
-            <OCQL>collectionLink('measurements')</OCQL>
+            <OCQL>nestedCollectionLink()</OCQL>
           </sourceExpression>
         </AttributeMapping>
       </attributeMappings>
@@ -132,25 +132,25 @@
         <AttributeMapping>
           <targetAttribute>st:Value</targetAttribute>
           <idExpression>
-            <OCQL>collectionId('measurements.values')</OCQL>
+            <OCQL>collectionId()</OCQL>
           </idExpression>
         </AttributeMapping>
         <AttributeMapping>
           <targetAttribute>st:timestamp</targetAttribute>
           <sourceExpression>
-            <OCQL>jsonSelect('measurements.values.time')</OCQL>
+            <OCQL>jsonSelect('time')</OCQL>
           </sourceExpression>
         </AttributeMapping>
         <AttributeMapping>
           <targetAttribute>st:value</targetAttribute>
           <sourceExpression>
-            <OCQL>jsonSelect('measurements.values.value')</OCQL>
+            <OCQL>jsonSelect('value')</OCQL>
           </sourceExpression>
         </AttributeMapping>
         <AttributeMapping>
           <targetAttribute>FEATURE_LINK[2]</targetAttribute>
           <sourceExpression>
-            <OCQL>collectionLink('measurements.values')</OCQL>
+            <OCQL>nestedCollectionLink()</OCQL>
           </sourceExpression>
         </AttributeMapping>
       </attributeMappings>
