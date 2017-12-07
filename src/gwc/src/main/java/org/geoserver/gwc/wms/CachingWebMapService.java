@@ -128,10 +128,17 @@ public class CachingWebMapService implements MethodInterceptor {
 
         Integer cacheAgeMax = getCacheAge(layer);
         LOGGER.log(Level.FINE, "Using cacheAgeMax {0}", cacheAgeMax);
-        if (cacheAgeMax != null) {
-            map.setResponseHeader("Cache-Control", "max-age=" + cacheAgeMax);
-        } else {
-            map.setResponseHeader("Cache-Control", "no-cache");
+        LayerInfo layerInfo = ((GeoServerTileLayer) layer).getLayerInfo();
+        if (layerInfo != null) {
+        MetadataMap metadata = layerInfo.getResource().getMetadata();
+            Boolean enabled = metadata.get(ResourceInfo.CACHING_ENABLED, Boolean.class);
+            if (enabled != null && enabled) {
+                if (cacheAgeMax != null) {
+                    map.setResponseHeader("Cache-Control", "max-age=" + cacheAgeMax);
+                } else {
+                    map.setResponseHeader("Cache-Control", "no-cache");
+                }
+            } //We don't set the Cache-Control if CACHING_ENABLED is null as it might be controlled by other software such as GWC
         }
 
         setConditionalGetHeaders(map, cachedTile, request, etag);
@@ -195,11 +202,11 @@ public class CachingWebMapService implements MethodInterceptor {
             LayerInfo layerInfo = ((GeoServerTileLayer) layer).getLayerInfo();
             // configuring caching does not appear possible for layergroup
             if (layerInfo != null) {
-                MetadataMap metadata = layerInfo.getResource().getMetadata();
-                Boolean enabled = metadata.get(ResourceInfo.CACHING_ENABLED, Boolean.class);
-                if (enabled != null && enabled) {
+                //MetadataMap metadata = layerInfo.getResource().getMetadata();
+                //Boolean enabled = metadata.get(ResourceInfo.CACHING_ENABLED, Boolean.class);
+                //if (enabled != null && enabled) {
                     cacheAge = layerInfo.getResource().getMetadata().get(ResourceInfo.CACHE_AGE_MAX, Integer.class);
-                }
+                //}
             }
         }
         return cacheAge;
